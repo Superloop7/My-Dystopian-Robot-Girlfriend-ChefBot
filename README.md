@@ -46,25 +46,6 @@ python main.py
 | 1920x1200  | 16:10       |Not verified|
 | 1920x1080  | 16:9        |Not verified|
 
-## Contributing
-
-### Adding a new resolution
-
-1. Open the cooking minigame on your screen
-2. Use a screen coordinate tool to find:
-   - **judge_box**: the purple square where notes arrive (x1, y1, x2, y2)
-   - **bar_extend_box**: a narrow strip to the right of the judge box
-3. Add your coordinates to `RESOLUTION_PROFILES` in `main.py`:
-
-```python
-"1920x1080": {
-    "judge_box": (x1, y1, x2, y2),
-    "bar_extend_box": (x1, y1, x2, y2),
-    "template_scale": 0.75,  # 1920/2560 = 0.75
-},
-```
-
-4. Open a Pull Request or Issue with your tested coordinates
 
 ## Requirements
 

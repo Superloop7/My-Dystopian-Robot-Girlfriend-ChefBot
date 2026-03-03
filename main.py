@@ -5,6 +5,8 @@ import keyboard
 import time
 import os
 import sys
+import ctypes
+import sys
 import tkinter as tk
 from tkinter import ttk
 import threading
@@ -19,6 +21,16 @@ import threading
     coordinates are screen-specific and must be measured on real hardware.
     only verified resolution: 2560x1600
 """
+
+# === DPI awareness: MUST be before tkinter import ===
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # per-monitor DPI aware
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()  # fallback
+        except Exception:
+            pass
 
 # support pyinstaller bundled mode
 if getattr(sys, "frozen", False):
@@ -43,21 +55,21 @@ RESOLUTION_PROFILES = {
         "template_scale": 1.0,
     },
     # add more resolutions here after real testing:
-    # "2560x1440": {
-    #     "judge_box": (?, ?, ?, ?),
-    #     "bar_extend_box": (?, ?, ?, ?),
-    #     "template_scale": 1.0,
-    # },
-    # "2560x1440": {
-    #     "judge_box": (?, ?, ?, ?),
-    #     "bar_extend_box": (?, ?, ?, ?),
-    #     "template_scale": 1.0,
-    # },
-    # "1920x1080": {
-    #     "judge_box": (?, ?, ?, ?),
-    #     "bar_extend_box": (?, ?, ?, ?),
-    #     "template_scale": 0.75,
-    # },
+    "2560x1440": {
+        "judge_box": (370, 1126, 482, 1238),
+        "bar_extend_box": (484, 1150, 519, 1215),
+        "template_scale": 1.0,
+    },
+    "1920x1200": {
+        "judge_box": (280, 905, 364, 989),
+        "bar_extend_box": (366, 923, 392, 971),
+        "template_scale": 0.75,
+    },
+    "1920x1080": {
+        "judge_box": (278, 845, 362, 929),
+        "bar_extend_box": (364, 863, 390, 911),
+        "template_scale": 0.75,
+    },
 }
 
 # match threshold
@@ -140,7 +152,7 @@ class ChefBotGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("ChefBot")
-        self.root.geometry("420x350")
+        self.root.geometry("540x460")
         self.root.resizable(False, False)
 
         self.running = False
@@ -148,17 +160,17 @@ class ChefBotGUI:
         self.fps_text = tk.StringVar(value="FPS: --")
 
         # title
-        tk.Label(root, text="ChefBot", font=("微软雅黑", 18, "bold")).pack(pady=(15, 5))
+        tk.Label(root, text="ChefBot", font=("微软雅黑", 20, "bold")).pack(pady=(15, 5))
 
         # status label
         self.status_label = tk.Label(
-            root, text="○ 准备就绪", font=("微软雅黑", 18), fg="black"
+            root, text="○ 准备就绪", font=("微软雅黑", 20), fg="black"
         )
         self.status_label.pack(pady=5)
 
         # fps label
         tk.Label(
-            root, textvariable=self.fps_text, font=("微软雅黑", 18), fg="gray"
+            root, textvariable=self.fps_text, font=("微软雅黑", 20), fg="gray"
         ).pack()
 
         # resolution selector
@@ -188,16 +200,16 @@ class ChefBotGUI:
             root,
             text="开始脚本 (F10)",
             command=self.toggle_bot,
-            width=20,
+            width=14,
             height=2,
             bg="lightgray",
-            font=("微软雅黑", 18),
+            font=("微软雅黑", 16),
         )
         self.btn.pack(pady=10)
 
         # hotkey hint
         tk.Label(
-            root, text="开始: F10  |  停止: F11", fg="gray", font=("微软雅黑", 18)
+            root, text="开始: F10  |  停止: F11", fg="gray", font=("微软雅黑", 16)
         ).pack()
 
         # hotkey listener thread
