@@ -1,4 +1,4 @@
-# ChefBot 🥕🍆
+# My Dystopian Robot Girlfriend chefbot
 
 **My Dystopian Robot Girlfriend chefbot**
 
@@ -34,17 +34,17 @@ python main.py
 
 | Key | Action |
 |-----|--------|
-| F10 | Start |
-| F11 | Stop  |
+| F10 | Start  |
+| F11 | Stop   |
 
 ## Supported Resolutions
 
 | Resolution | Aspect Ratio| Status     |
 |------------|-------------|------------|
-| 2560x1600  | 16:10       | Verified   |
+| 2560x1600  | 16:10       |Verified    |
 | 2560x1440  | 16:9        |Not verified|
-| 1920x1200  | 16:10       |Not verified|
-| 1920x1080  | 16:9        |Not verified|
+| 1920x1200  | 16:10       |Verified    |
+| 1920x1080  | 16:9        |Verified    |
 
 
 ## Requirements
