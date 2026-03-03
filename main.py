@@ -245,6 +245,8 @@ class ChefBotGUI:
                 while keyboard.is_pressed("F11"):
                     time.sleep(0.01)
 
+            time.sleep(0.01)
+
     def toggle_bot(self):
         if not self.running:
             self._start_bot()
