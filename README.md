@@ -1,1 +1,78 @@
-# My-Dystopian-Robot-Girlfriend-ChefBot
+# ChefBot 🥕🍆
+
+**My Dystopian Robot Girlfriend chefbot**
+
+Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
+
+## Features
+
+-  Auto-detect carrot (Z key) and eggplant (X key)
+-  Auto-detect hold bars and release at the right time
+-  Template matching + RGB color detection for high accuracy
+-  Resolution profile system (easy to add new resolutions)
+
+## Quick Start
+
+### Option 1: Run the exe (recommended)
+
+1. Download `ChefBot.exe` from [Releases]
+2. Double-click to run (run as Administrator if needed)
+3. Select your screen resolution
+4. Enter the cooking minigame, press **F10** to start
+5. Press **F11** to stop after the level ends
+
+### Option 2: Run from source
+
+```bash
+git clone https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot.git
+cd My-Dystopian-Robot-Girlfriend-ChefBot
+pip install -r requirements.txt
+python main.py
+```
+
+## Hotkeys
+
+| Key | Action |
+|-----|--------|
+| F10 | Start |
+| F11 | Stop  |
+
+## Supported Resolutions
+
+| Resolution | Aspect Ratio| Status     |
+|------------|-------------|------------|
+| 2560x1600  | 16:10       | Verified   |
+| 2560x1440  | 16:9        |Not verified|
+| 1920x1200  | 16:10       |Not verified|
+| 1920x1080  | 16:9        |Not verified|
+
+## Contributing
+
+### Adding a new resolution
+
+1. Open the cooking minigame on your screen
+2. Use a screen coordinate tool to find:
+   - **judge_box**: the purple square where notes arrive (x1, y1, x2, y2)
+   - **bar_extend_box**: a narrow strip to the right of the judge box
+3. Add your coordinates to `RESOLUTION_PROFILES` in `main.py`:
+
+```python
+"1920x1080": {
+    "judge_box": (x1, y1, x2, y2),
+    "bar_extend_box": (x1, y1, x2, y2),
+    "template_scale": 0.75,  # 1920/2560 = 0.75
+},
+```
+
+4. Open a Pull Request or Issue with your tested coordinates
+
+## Requirements
+
+- Python 3.10+
+- Windows (uses `keyboard` and `mss` which require Windows for full functionality)
+- Run as **Administrator** (keyboard library requires elevated privileges)
+- Game should be in **windowed** or **borderless windowed** mode
+
+## License
+
+MIT
