@@ -6,6 +6,8 @@ import time
 import os
 import sys
 import ctypes
+if sys.platform == "win32":
+    import winsound
 import tkinter as tk
 from tkinter import ttk
 import threading
@@ -147,6 +149,20 @@ def detect_screen_resolution():
         return f"{w}x{h}"
 
 
+def play_sound_async(sound_type):
+    """Play a rising (start) or falling (stop) tone in a background thread."""
+    if sys.platform != "win32":
+        return
+    def _play():
+        if sound_type == "start":
+            winsound.Beep(800, 200)
+            winsound.Beep(1200, 200)
+        else:
+            winsound.Beep(1200, 200)
+            winsound.Beep(800, 200)
+    threading.Thread(target=_play, daemon=True).start()
+
+
 class ChefBotGUI:
     def __init__(self, root):
         self.root = root
@@ -257,6 +273,7 @@ class ChefBotGUI:
         self.status_label.config(text="● 正在切菜中...", fg="green")
         self.btn.config(text="停止脚本 (F11)", bg="#cc3333", fg="white")
         self.res_combo.config(state="disabled")
+        play_sound_async("start")
 
         threading.Thread(target=self._bot_worker, daemon=True).start()
 
@@ -266,6 +283,7 @@ class ChefBotGUI:
         self.btn.config(text="开始脚本 (F10)", bg="lightgray", fg="black")
         self.fps_text.set("FPS: --")
         self.res_combo.config(state="readonly")
+        play_sound_async("stop")
 
         keyboard.release("z")
         keyboard.release("x")

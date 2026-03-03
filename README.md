@@ -15,7 +15,7 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 
 ### Option 1: Run the exe (recommended)
 
-1. Download `ChefBot.exe` from [Releases]
+1. Download `ChefBot.exe` from [Releases](../../releases)
 2. Double-click to run (run as Administrator if needed)
 3. Select your screen resolution
 4. Enter the cooking minigame, press **F10** to start
