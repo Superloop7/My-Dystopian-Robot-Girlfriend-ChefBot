@@ -52,7 +52,7 @@ python main.py
 - Python 3.10+
 - Windows (uses `keyboard` and `mss` which require Windows for full functionality)
 - Run as **Administrator** (keyboard library requires elevated privileges)
-- Game should be in **windowed** or **borderless windowed** mode
+- Game should be in **borderless windowed** mode
 
 ## License
 
