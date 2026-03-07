@@ -56,4 +56,4 @@ python main.py
 
 ## License
 
-MIT
+GPL3.0
