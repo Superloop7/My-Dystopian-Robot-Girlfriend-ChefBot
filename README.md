@@ -15,13 +15,20 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 
 ### Option 1: 使用命令行运行（推荐） \ Run with command line (recommended)
 
-1. 从 [Releases](https://github.com/DrJason33564/My-Dystopian-Robot-Girlfriend-ChefBot/releases) 下载 `ChefBot.zip` \ Download `ChefBot.zip` from [Releases](https://github.com/DrJason33564/My-Dystopian-Robot-Girlfriend-ChefBot/releases)
+1. 从 [Releases] 下载 `ChefBot-win64.zip` \ Download `ChefBot-win64.zip` from [Releases]
 2. 双击 `start.bat`, 设置MATCH_TH，启动脚本 \ Double-click `start.bat`, set MATCH_TH, and run
 3. 进入烹饪小游戏，按下 **F10** 键开始运行 \ Enter the cooking minigame, press **F10** to start
 4. 关卡完成后，按下 **F11** 结束运行 \ Press **F11** to stop after the level ends
 5. Ctrl+c 键以退出脚本 \ Crtl+c to quit
 
-### Option 2: 使用UI运行 \ Run with UI
+### Option 2: 使用exe程序运行(推荐) \ Run with exe application (recommended)
+1. 从 [Releases] 下载 `ChefBot-v0.3.0.exe` 或 `ChefBot-cli-v0.3.0.exe` \ Download `ChefBot-win64.zip` or `ChefBot-cli-v0.3.0.exe` from [Releases]
+2. 双击启动脚本 \ Double-click and run
+3. 进入烹饪小游戏，按下 **F10** 键开始运行 \ Enter the cooking minigame, press **F10** to start
+4. 关卡完成后，按下 **F11** 结束运行 \ Press **F11** to stop after the level ends
+5. 退出软件 \ exit the application
+
+### Option 3: 使用UI运行 \ Run with UI
 
 ```bash
 git clone https://github.com/DrJason33564/My-Dystopian-Robot-Girlfriend-ChefBot.git
@@ -56,3 +63,4 @@ GPL3.0
 
 ## 致谢 \ Achknowledgement
 本项目修改自 [Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot](https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot)
+新版本merge了DrJason33564的新版本 感谢贡献： https://github.com/DrJason33564 
