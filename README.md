@@ -63,5 +63,5 @@ Theoretically applicable to all 16:9 and 16:10 screens, and has been tested and 
 GPL3.0
 
 ## 致谢 \ Achknowledgement
-本项目修改自 [Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot](https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot)
-新版本merge了DrJason33564的新版本 感谢贡献： https://github.com/DrJason33564 
+- 本项目修改自 [Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot](https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot)
+- 新版本merge了DrJason33564的新版本 感谢贡献： https://github.com/DrJason33564 
