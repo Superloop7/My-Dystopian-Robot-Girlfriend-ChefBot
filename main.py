@@ -105,11 +105,24 @@ BAR_COLOR_TH = 0.25
 BAR_SAMPLE_RADIUS = 5
 
 
+def imread_unicode(path, flags=cv.IMREAD_COLOR):
+    """
+    Read an image from any filesystem path, including non-ASCII paths on Windows.
+
+    OpenCV's cv.imread can fail on Unicode paths depending on build/runtime locale.
+    Using np.fromfile + cv.imdecode avoids that limitation.
+    """
+    data = np.fromfile(path, dtype=np.uint8)
+    if data.size == 0:
+        return None
+    return cv.imdecode(data, flags)
+
+
 def load_templates_rgb(scale=1.0):
     """Load template images as RGB with resolution scaling and downsampling."""
     templates = {}
     for name, path in TEMPLATES.items():
-        img = cv.imread(path, cv.IMREAD_COLOR)
+        img = imread_unicode(path, cv.IMREAD_COLOR)
         if img is None:
             raise FileNotFoundError(f"failed to load template: {path}")
         img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
