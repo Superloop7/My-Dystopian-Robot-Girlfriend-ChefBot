@@ -22,8 +22,9 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 5. Ctrl+c 键以退出脚本 \ Crtl+c to quit
 
 ### Option 2: 使用exe程序运行(推荐) \ Run with exe application (recommended)
-1. 从 [Releases] 下载 `ChefBot-v0.3.0.exe` 或 `ChefBot-cli-v0.3.0.exe` \ Download `ChefBot-win64.zip` or `ChefBot-cli-v0.3.0.exe` from [Releases]
+1. 从 [Releases] 下载 `ChefBot-v0.3.0.exe` 或 `ChefBot-cli.zip` \ Download `ChefBot-win64.zip` or `ChefBot-cli.zip` from [Releases]
 2. 双击启动脚本 \ Double-click and run
+2.1 双击start.bat，设置Match_TH，启动脚本 \ Double-click `start.bat`, set MATCH_TH, and run
 3. 进入烹饪小游戏，按下 **F10** 键开始运行 \ Enter the cooking minigame, press **F10** to start
 4. 关卡完成后，按下 **F11** 结束运行 \ Press **F11** to stop after the level ends
 5. 退出软件 \ exit the application
