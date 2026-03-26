@@ -26,7 +26,7 @@ from tkinter import ttk
 import threading
 
 """
-    ChefBot v0.2.0 - My Dystopian Robot Girlfriend auto-chef
+    ChefBot v0.3.0 - My Dystopian Robot Girlfriend auto-chef
 
     short press: carrot -> Z, eggplant -> X
     hold press:  carrot+bar -> hold Z, eggplant+bar -> hold X
@@ -34,6 +34,11 @@ import threading
 
     Uses dxcam (DXGI Desktop Duplication) for fast screen capture,
     merged region grabbing, and optimized bar color detection.
+
+    v0.3.0 adds adaptive resolution support:
+    - automatically detects current screen resolution
+    - scales capture boxes using the closest reference aspect ratio
+    - computes template scale from the current screen width
 """
 
 # support pyinstaller bundled mode
@@ -49,29 +54,40 @@ TEMPLATES = {
     "eggplant": os.path.join(TEMPLATE_DIR, "eggplant.png"),
 }
 
-# resolution profiles: coordinates are physical pixels
-# template_scale: scale factor relative to 2560-width templates
-RESOLUTION_PROFILES = {
+# Reference profiles in physical pixels.
+# These are used as the calibration source for adaptive scaling.
+REFERENCE_PROFILES = {
     "2560x1600": {
         "judge_box": (371, 1206, 483, 1318),
         "bar_extend_box": (485, 1230, 520, 1295),
         "template_scale": 1.0,
+        "verified": True,
     },
     "2560x1440": {
         "judge_box": (370, 1126, 482, 1238),
         "bar_extend_box": (484, 1150, 519, 1215),
         "template_scale": 1.0,
+        "verified": False,
     },
     "1920x1200": {
         "judge_box": (280, 905, 364, 989),
         "bar_extend_box": (366, 923, 392, 971),
         "template_scale": 0.75,
+        "verified": True,
     },
     "1920x1080": {
         "judge_box": (278, 845, 362, 929),
         "bar_extend_box": (364, 863, 390, 911),
         "template_scale": 0.75,
+        "verified": True,
     },
+}
+
+# One high-width reference per aspect ratio.
+# We prefer the 2560-width layouts because the template images were captured there.
+ASPECT_REFERENCE_KEYS = {
+    "16:10": "2560x1600",
+    "16:9": "2560x1440",
 }
 
 # template match threshold
@@ -158,13 +174,83 @@ def compute_merged_region(judge_box, bar_box):
     return merged, judge_slice, bar_slice
 
 
+def parse_resolution(resolution_text):
+    """Parse a resolution string like '1920x1080' into integers."""
+    w_str, h_str = resolution_text.lower().split("x")
+    return int(w_str), int(h_str)
+
+
+
 def detect_screen_resolution():
-    """Auto-detect screen resolution via dxcam."""
+    """Auto-detect screen resolution without creating a temporary dxcam object."""
+    if sys.platform == "win32":
+        try:
+            user32 = ctypes.windll.user32
+            w = user32.GetSystemMetrics(0)
+            h = user32.GetSystemMetrics(1)
+            if w > 0 and h > 0:
+                return f"{w}x{h}"
+        except Exception:
+            pass
+
     camera = dxcam.create()
     w = camera.width
     h = camera.height
     del camera
     return f"{w}x{h}"
+
+
+
+def aspect_ratio_key(width, height):
+    """Choose the closest known aspect ratio profile for the current resolution."""
+    current_ratio = width / height
+    options = {}
+    for name, ref_key in ASPECT_REFERENCE_KEYS.items():
+        ref_w, ref_h = parse_resolution(ref_key)
+        options[name] = abs(current_ratio - (ref_w / ref_h))
+    return min(options, key=options.get)
+
+
+
+def scale_box(box, sx, sy):
+    """Scale a capture box by x/y factors and clamp to integer pixels."""
+    x1, y1, x2, y2 = box
+    scaled = (
+        int(round(x1 * sx)),
+        int(round(y1 * sy)),
+        int(round(x2 * sx)),
+        int(round(y2 * sy)),
+    )
+
+    # Ensure a positive box even on very small resolutions.
+    nx1, ny1, nx2, ny2 = scaled
+    nx2 = max(nx2, nx1 + 1)
+    ny2 = max(ny2, ny1 + 1)
+    return (nx1, ny1, nx2, ny2)
+
+
+
+def build_adaptive_profile(width, height):
+    """Create a runtime profile for any resolution from the closest reference layout."""
+    aspect_key = aspect_ratio_key(width, height)
+    ref_key = ASPECT_REFERENCE_KEYS[aspect_key]
+    ref_w, ref_h = parse_resolution(ref_key)
+    ref_profile = REFERENCE_PROFILES[ref_key]
+
+    sx = width / ref_w
+    sy = height / ref_h
+    template_scale = width / ref_w
+
+    return {
+        "resolution": f"{width}x{height}",
+        "aspect_key": aspect_key,
+        "reference_key": ref_key,
+        "judge_box": scale_box(ref_profile["judge_box"], sx, sy),
+        "bar_extend_box": scale_box(ref_profile["bar_extend_box"], sx, sy),
+        "template_scale": template_scale,
+        "verified_reference": ref_profile.get("verified", False),
+    }
+
 
 
 def play_sound_async(sound_type):
@@ -186,15 +272,21 @@ def play_sound_async(sound_type):
 class ChefBotGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("ChefBot v0.2.0")
-        self.root.geometry("540x460")
+        self.root.title("ChefBot v0.3.0")
+        self.root.geometry("620x520")
         self.root.resizable(False, False)
 
         self.running = False
         self.templates = None
+        self.profile = None
+        self.camera = None
+        self.worker_thread = None
         self.fps_text = tk.StringVar(value="FPS: --")
+        self.res_var = tk.StringVar()
+        self.aspect_var = tk.StringVar(value="参考布局: --")
+        self.ref_var = tk.StringVar(value="参考分辨率: --")
 
-        tk.Label(root, text="ChefBot v0.2.0", font=("微软雅黑", 20, "bold")).pack(
+        tk.Label(root, text="ChefBot v0.3.0", font=("微软雅黑", 20, "bold")).pack(
             pady=(15, 5)
         )
 
@@ -207,25 +299,26 @@ class ChefBotGUI:
             root, textvariable=self.fps_text, font=("微软雅黑", 20), fg="gray"
         ).pack()
 
-        res_frame = tk.Frame(root)
-        res_frame.pack(pady=8)
-        tk.Label(res_frame, text="分辨率:", font=("微软雅黑", 18)).pack(side=tk.LEFT)
+        info_frame = tk.Frame(root)
+        info_frame.pack(pady=10)
 
-        self.res_var = tk.StringVar()
-        self.res_combo = ttk.Combobox(
-            res_frame,
-            textvariable=self.res_var,
-            values=list(RESOLUTION_PROFILES.keys()),
-            state="readonly",
-            width=16,
+        tk.Label(info_frame, text="当前分辨率:", font=("微软雅黑", 18)).grid(
+            row=0, column=0, sticky="w", padx=(0, 10)
         )
-        self.res_combo.pack(side=tk.LEFT, padx=10)
+        tk.Label(info_frame, textvariable=self.res_var, font=("微软雅黑", 18)).grid(
+            row=0, column=1, sticky="w"
+        )
 
-        detected = detect_screen_resolution()
-        if detected in RESOLUTION_PROFILES:
-            self.res_var.set(detected)
-        elif RESOLUTION_PROFILES:
-            self.res_var.set(list(RESOLUTION_PROFILES.keys())[0])
+        tk.Label(info_frame, textvariable=self.aspect_var, font=("微软雅黑", 16), fg="gray").grid(
+            row=1, column=0, columnspan=2, sticky="w", pady=(6, 0)
+        )
+        tk.Label(info_frame, textvariable=self.ref_var, font=("微软雅黑", 16), fg="gray").grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(2, 0)
+        )
+
+        self.detected_resolution = detect_screen_resolution()
+        self.res_var.set(self.detected_resolution)
+        self._refresh_profile_info(self.detected_resolution)
 
         self.btn = tk.Button(
             root,
@@ -239,10 +332,49 @@ class ChefBotGUI:
         self.btn.pack(pady=10)
 
         tk.Label(
-            root, text="开始: F10  |  停止: F11", fg="gray", font=("微软雅黑", 16)
+            root,
+            text="开始: F10  |  停止: F11",
+            fg="gray",
+            font=("微软雅黑", 16),
         ).pack()
 
+        tk.Label(
+            root,
+            text="已启用全分辨率自适应。程序会按当前分辨率自动缩放识别区域",
+            fg="gray",
+            font=("微软雅黑", 14),
+            wraplength=560,
+            justify="center",
+        ).pack(pady=(14, 0))
+
+        tk.Label(
+            root,
+            text="提示：非常规纵横比（如 4:3、21:9）会自动套用最接近的参考布局，可靠性未知",
+            fg="gray",
+            font=("微软雅黑", 12),
+            wraplength=560,
+            justify="center",
+        ).pack(pady=(8, 0))
+
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
         threading.Thread(target=self._hotkey_listener, daemon=True).start()
+
+    def _refresh_profile_info(self, resolution_text):
+        width, height = parse_resolution(resolution_text)
+        profile = build_adaptive_profile(width, height)
+        self.aspect_var.set(f"参考布局: {profile['aspect_key']} 自适应")
+        self.ref_var.set(f"参考分辨率: {profile['reference_key']}")
+
+    def _on_close(self):
+        self._stop_bot()
+        if self.camera is not None:
+            try:
+                del self.camera
+            except Exception:
+                pass
+            self.camera = None
+        self.root.destroy()
 
     def _hotkey_listener(self):
         """Poll F10/F11 hotkeys in background thread."""
@@ -267,12 +399,12 @@ class ChefBotGUI:
         if self.running:
             return
 
-        res_key = self.res_var.get()
-        if res_key not in RESOLUTION_PROFILES:
-            self.status_label.config(text="不支持当前分辨率", fg="red")
-            return
+        current_resolution = detect_screen_resolution()
+        self.res_var.set(current_resolution)
+        self._refresh_profile_info(current_resolution)
 
-        self.profile = RESOLUTION_PROFILES[res_key]
+        width, height = parse_resolution(current_resolution)
+        self.profile = build_adaptive_profile(width, height)
 
         try:
             self.templates = load_templates_rgb(self.profile["template_scale"])
@@ -280,20 +412,29 @@ class ChefBotGUI:
             self.status_label.config(text=f"x {e}", fg="red")
             return
 
+        if self.camera is None:
+            try:
+                self.camera = dxcam.create()
+            except Exception as e:
+                self.status_label.config(text=f"x dxcam 初始化失败: {e}", fg="red")
+                return
+
         self.running = True
         self.status_label.config(text="正在切菜中...", fg="green")
         self.btn.config(text="停止脚本 (F11)", bg="#cc3333", fg="white")
-        self.res_combo.config(state="disabled")
         play_sound_async("start")
 
-        threading.Thread(target=self._bot_worker, daemon=True).start()
+        self.worker_thread = threading.Thread(target=self._bot_worker, daemon=True)
+        self.worker_thread.start()
 
     def _stop_bot(self):
+        if not self.running:
+            return
+
         self.running = False
         self.status_label.config(text="脚本已停止", fg="black")
         self.btn.config(text="开始脚本 (F10)", bg="lightgray", fg="black")
         self.fps_text.set("FPS: --")
-        self.res_combo.config(state="readonly")
         play_sound_async("stop")
 
         keyboard.release("z")
@@ -325,7 +466,10 @@ class ChefBotGUI:
         fps_count = 0
         fps_timer = time.perf_counter()
 
-        camera = dxcam.create()
+        camera = self.camera
+        if camera is None:
+            self.root.after(0, lambda: self.status_label.config(text="x dxcam 未初始化", fg="red"))
+            return
 
         # warm up: discard first few frames to let dxcam initialize the DXGI pipeline
         for _ in range(10):
@@ -407,7 +551,6 @@ class ChefBotGUI:
                 keyboard.release("z")
             if hold_x_press:
                 keyboard.release("x")
-            del camera
 
 
 if __name__ == "__main__":
