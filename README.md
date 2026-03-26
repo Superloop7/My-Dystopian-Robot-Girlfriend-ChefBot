@@ -1,6 +1,4 @@
-# My Dystopian Robot Girlfriend chefbot
-
-**My Dystopian Robot Girlfriend chefbot**
+# My Dystopian Robot Girlfriend Chefbot
 
 Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 
@@ -9,19 +7,19 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 -  Auto-detect carrot (Z key) and eggplant (X key)
 -  Auto-detect hold bars and release at the right time
 -  Template matching + RGB color detection for high accuracy
--  Resolution profile system (easy to add new resolutions)
+-  Adaptive full-resolution scaling based on reference layouts (by DrJason33564)
 
 ## Quick Start
 
-### Option 1: Run the exe (recommended)
+### Option 1: Run with command line (recommended)
 
-1. Download `ChefBot.exe` from [Releases]
-2. Double-click to run (run as Administrator if needed)
-3. Select your screen resolution
-4. Enter the cooking minigame, press **F10** to start
-5. Press **F11** to stop after the level ends
+1. Download `ChefBot.zip` from [Releases]
+2. Double-click start.bat, set MATCH_TH, and run
+3. Enter the cooking minigame, press **F10** to start
+4. Press **F11** to stop after the level ends
+5. Crtl+c to quit
 
-### Option 2: Run from source
+### Option 2: Run with UI
 
 ```bash
 git clone https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot.git
@@ -39,12 +37,7 @@ python main.py
 
 ## Supported Resolutions
 
-| Resolution | Aspect Ratio| Status     |
-|------------|-------------|------------|
-| 2560x1600  | 16:10       |Verified    |
-| 2560x1440  | 16:9        |Not verified|
-| 1920x1200  | 16:10       |Verified    |
-| 1920x1080  | 16:9        |Verified    |
+Theoretically applicable to all 16:9 and 16:10 screens, and has been tested and working at 1366x768 resolution.
 
 
 ## Requirements
