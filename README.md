@@ -1,6 +1,6 @@
 # My Dystopian Robot Girlfriend Chefbot
 
-自动处理MDRG中的烹饪小游戏
+自动处理MDRG中的烹饪小游戏<br />
 Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 
 ## 特性 \ Features
@@ -38,7 +38,7 @@ python main.py
 
 ## 支持的分辨率 \ Supported Resolutions
 
-理论上适用所有16:9和16:10的屏幕，在 `1366x768` 分辨率下测试成功
+理论上适用所有16:9和16:10的屏幕，在 `1366x768` 分辨率下测试成功<br />
 Theoretically applicable to all 16:9 and 16:10 screens, and has been tested and working at `1366x768` resolution.
 
 
