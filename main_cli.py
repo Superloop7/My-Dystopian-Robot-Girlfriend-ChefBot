@@ -21,9 +21,8 @@ import os
 
 if sys.platform == "win32":
     import winsound
-import tkinter as tk
-from tkinter import ttk
 import threading
+import argparse
 
 """
     ChefBot v0.3.0 - My Dystopian Robot Girlfriend auto-chef
@@ -182,17 +181,17 @@ def parse_resolution(resolution_text):
 
 
 def detect_screen_resolution():
-    """Auto-detect screen resolution without creating a temporary dxcam object."""
+    """Auto-detect screen resolution without creating a dxcam instance."""
     if sys.platform == "win32":
         try:
             user32 = ctypes.windll.user32
-            w = user32.GetSystemMetrics(0)
-            h = user32.GetSystemMetrics(1)
-            if w > 0 and h > 0:
-                return f"{w}x{h}"
+            w = int(user32.GetSystemMetrics(0))
+            h = int(user32.GetSystemMetrics(1))
+            return f"{w}x{h}"
         except Exception:
             pass
 
+    # Fallback path for non-Windows or unexpected failures.
     camera = dxcam.create()
     w = camera.width
     h = camera.height
@@ -269,172 +268,77 @@ def play_sound_async(sound_type):
     threading.Thread(target=_play, daemon=True).start()
 
 
-class ChefBotGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("ChefBot v0.3.0")
-        self.root.geometry("620x520")
-        self.root.resizable(False, False)
-
+class ChefBotCLI:
+    def __init__(self, match_th=None):
         self.running = False
         self.templates = None
         self.profile = None
-        self.camera = None
         self.worker_thread = None
-        self.fps_text = tk.StringVar(value="FPS: --")
-        self.res_var = tk.StringVar()
-        self.aspect_var = tk.StringVar(value="参考布局: --")
-        self.ref_var = tk.StringVar(value="参考分辨率: --")
-
-        tk.Label(root, text="ChefBot v0.3.0", font=("微软雅黑", 20, "bold")).pack(
-            pady=(15, 5)
-        )
-
-        self.status_label = tk.Label(
-            root, text="准备就绪", font=("微软雅黑", 20), fg="black"
-        )
-        self.status_label.pack(pady=5)
-
-        tk.Label(
-            root, textvariable=self.fps_text, font=("微软雅黑", 20), fg="gray"
-        ).pack()
-
-        info_frame = tk.Frame(root)
-        info_frame.pack(pady=10)
-
-        tk.Label(info_frame, text="当前分辨率:", font=("微软雅黑", 18)).grid(
-            row=0, column=0, sticky="w", padx=(0, 10)
-        )
-        tk.Label(info_frame, textvariable=self.res_var, font=("微软雅黑", 18)).grid(
-            row=0, column=1, sticky="w"
-        )
-
-        tk.Label(info_frame, textvariable=self.aspect_var, font=("微软雅黑", 16), fg="gray").grid(
-            row=1, column=0, columnspan=2, sticky="w", pady=(6, 0)
-        )
-        tk.Label(info_frame, textvariable=self.ref_var, font=("微软雅黑", 16), fg="gray").grid(
-            row=2, column=0, columnspan=2, sticky="w", pady=(2, 0)
-        )
+        self.camera = None
+        self.match_th = MATCH_TH if match_th is None else match_th
 
         self.detected_resolution = detect_screen_resolution()
-        self.res_var.set(self.detected_resolution)
-        self._refresh_profile_info(self.detected_resolution)
+        width, height = parse_resolution(self.detected_resolution)
+        self.profile = build_adaptive_profile(width, height)
 
-        self.btn = tk.Button(
-            root,
-            text="开始脚本 (F10)",
-            command=self.toggle_bot,
-            width=14,
-            height=2,
-            bg="lightgray",
-            font=("微软雅黑", 16),
-        )
-        self.btn.pack(pady=10)
-
-        tk.Label(
-            root,
-            text="开始: F10  |  停止: F11",
-            fg="gray",
-            font=("微软雅黑", 16),
-        ).pack()
-
-        tk.Label(
-            root,
-            text="已启用全分辨率自适应。程序会按当前分辨率自动缩放识别区域",
-            fg="gray",
-            font=("微软雅黑", 14),
-            wraplength=560,
-            justify="center",
-        ).pack(pady=(14, 0))
-
-        tk.Label(
-            root,
-            text="提示：非常规纵横比（如 4:3、21:9）会自动套用最接近的参考布局，可靠性未知",
-            fg="gray",
-            font=("微软雅黑", 12),
-            wraplength=560,
-            justify="center",
-        ).pack(pady=(8, 0))
-
-        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-
-        threading.Thread(target=self._hotkey_listener, daemon=True).start()
-
-    def _refresh_profile_info(self, resolution_text):
-        width, height = parse_resolution(resolution_text)
-        profile = build_adaptive_profile(width, height)
-        self.aspect_var.set(f"参考布局: {profile['aspect_key']} 自适应")
-        self.ref_var.set(f"参考分辨率: {profile['reference_key']}")
-
-    def _on_close(self):
-        self._stop_bot()
-        if self.camera is not None:
-            try:
-                del self.camera
-            except Exception:
-                pass
-            self.camera = None
-        self.root.destroy()
+    def print_status(self):
+        print("ChefBot v0.3.0 CLI")
+        print(f"当前分辨率: {self.detected_resolution}")
+        print(f"参考布局: {self.profile['aspect_key']} 自适应")
+        print(f"参考分辨率: {self.profile['reference_key']}")
+        print(f"MATCH_TH: {self.match_th}")
+        print("热键: F10 开始 | F11 停止 | Ctrl+C 退出")
+        print()
 
     def _hotkey_listener(self):
         """Poll F10/F11 hotkeys in background thread."""
         while True:
             if keyboard.is_pressed("F10") and not self.running:
-                self.root.after(0, self._start_bot)
+                self.start_bot()
                 while keyboard.is_pressed("F10"):
                     time.sleep(0.01)
+
             if keyboard.is_pressed("F11") and self.running:
-                self.root.after(0, self._stop_bot)
+                self.stop_bot()
                 while keyboard.is_pressed("F11"):
                     time.sleep(0.01)
+
             time.sleep(0.01)
 
-    def toggle_bot(self):
-        if not self.running:
-            self._start_bot()
-        else:
-            self._stop_bot()
-
-    def _start_bot(self):
+    def start_bot(self):
         if self.running:
             return
 
-        current_resolution = detect_screen_resolution()
-        self.res_var.set(current_resolution)
-        self._refresh_profile_info(current_resolution)
-
-        width, height = parse_resolution(current_resolution)
+        self.detected_resolution = detect_screen_resolution()
+        width, height = parse_resolution(self.detected_resolution)
         self.profile = build_adaptive_profile(width, height)
 
         try:
             self.templates = load_templates_rgb(self.profile["template_scale"])
         except FileNotFoundError as e:
-            self.status_label.config(text=f"x {e}", fg="red")
+            print(f"[错误] {e}")
             return
 
         if self.camera is None:
-            try:
-                self.camera = dxcam.create()
-            except Exception as e:
-                self.status_label.config(text=f"x dxcam 初始化失败: {e}", fg="red")
-                return
+            self.camera = dxcam.create()
 
         self.running = True
-        self.status_label.config(text="正在切菜中...", fg="green")
-        self.btn.config(text="停止脚本 (F11)", bg="#cc3333", fg="white")
+        print(
+            f"[开始] 分辨率: {self.detected_resolution} | "
+            f"参考布局: {self.profile['aspect_key']} 自适应 | "
+            f"MATCH_TH={self.match_th}"
+        )
         play_sound_async("start")
 
         self.worker_thread = threading.Thread(target=self._bot_worker, daemon=True)
         self.worker_thread.start()
 
-    def _stop_bot(self):
+    def stop_bot(self):
         if not self.running:
             return
 
         self.running = False
-        self.status_label.config(text="脚本已停止", fg="black")
-        self.btn.config(text="开始脚本 (F10)", bg="lightgray", fg="black")
-        self.fps_text.set("FPS: --")
+        print("[停止] 脚本已停止")
         play_sound_async("stop")
 
         keyboard.release("z")
@@ -445,14 +349,12 @@ class ChefBotGUI:
         judge_box = self.profile["judge_box"]
         bar_box = self.profile["bar_extend_box"]
 
-        # pre-compute merged capture region and sub-region slices
         merged_region, judge_slice, bar_slice = compute_merged_region(
             judge_box, bar_box
         )
         jr1, jr2, jc1, jc2 = judge_slice
         br1, br2, bc1, bc2 = bar_slice
 
-        # pre-compute downsample target size for judge region
         judge_h = jr2 - jr1
         judge_w = jc2 - jc1
         small_h = max(1, int(judge_h * DOWNSAMPLE_RATIO))
@@ -466,44 +368,32 @@ class ChefBotGUI:
         fps_count = 0
         fps_timer = time.perf_counter()
 
-        camera = self.camera
-        if camera is None:
-            self.root.after(0, lambda: self.status_label.config(text="x dxcam 未初始化", fg="red"))
-            return
-
-        # warm up: discard first few frames to let dxcam initialize the DXGI pipeline
         for _ in range(10):
-            camera.grab(region=merged_region)
+            self.camera.grab(region=merged_region)
             time.sleep(0.01)
 
         try:
             while self.running:
-                # single grab covering both judge and bar regions
-                frame = camera.grab(region=merged_region)
+                frame = self.camera.grab(region=merged_region)
                 if frame is None:
                     continue
 
-                # slice sub-regions from merged frame (zero-copy)
                 judge_rgb = frame[jr1:jr2, jc1:jc2]
                 bar_rgb = frame[br1:br2, bc1:bc2]
 
-                # downsample judge region before matching
                 if DOWNSAMPLE_RATIO < 1.0:
                     judge_rgb = cv.resize(
                         judge_rgb, (small_w, small_h), interpolation=cv.INTER_AREA
                     )
 
-                # template matching
                 carrot_score = match_template(judge_rgb, self.templates["carrot"])
                 eggplant_score = match_template(judge_rgb, self.templates["eggplant"])
 
-                carrot_hit = carrot_score >= MATCH_TH
-                eggplant_hit = eggplant_score >= MATCH_TH
+                carrot_hit = carrot_score >= self.match_th
+                eggplant_hit = eggplant_score >= self.match_th
 
-                # bar color detection (center sampling)
                 bar_color = detect_bar_color_fast(bar_rgb)
 
-                # === carrot (Z): press logic ===
                 if carrot_hit and not prev_carrot_hit:
                     if bar_color == "BLUE":
                         if not hold_z_press:
@@ -513,12 +403,10 @@ class ChefBotGUI:
                         if not hold_z_press:
                             keyboard.press_and_release("z")
 
-                # === carrot (Z): release logic ===
                 if hold_z_press and bar_color != "BLUE":
                     keyboard.release("z")
                     hold_z_press = False
 
-                # === eggplant (X): press logic ===
                 if eggplant_hit and not prev_eggplant_hit:
                     if bar_color == "GREEN":
                         if not hold_x_press:
@@ -528,21 +416,18 @@ class ChefBotGUI:
                         if not hold_x_press:
                             keyboard.press_and_release("x")
 
-                # === eggplant (X): release logic ===
                 if hold_x_press and bar_color != "GREEN":
                     keyboard.release("x")
                     hold_x_press = False
 
-                # update edge trigger
                 prev_carrot_hit = carrot_hit
                 prev_eggplant_hit = eggplant_hit
 
-                # fps counter
                 fps_count += 1
                 now = time.perf_counter()
                 if now - fps_timer >= 1.0:
                     real_fps = fps_count / (now - fps_timer)
-                    self.fps_text.set(f"FPS: {real_fps:.0f}")
+                    print(f"\rFPS: {real_fps:.0f}", end="", flush=True)
                     fps_count = 0
                     fps_timer = now
 
@@ -551,9 +436,28 @@ class ChefBotGUI:
                 keyboard.release("z")
             if hold_x_press:
                 keyboard.release("x")
+            print()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = ChefBotGUI(root)
-    root.mainloop()
+    parser = argparse.ArgumentParser(description="ChefBot CLI")
+    parser.add_argument(
+        "-th",
+        "--match-th",
+        type=float,
+        default=MATCH_TH,
+        help=f"template match threshold (default: {MATCH_TH})",
+    )
+    args = parser.parse_args()
+
+    app = ChefBotCLI(match_th=args.match_th)
+    app.print_status()
+
+    threading.Thread(target=app._hotkey_listener, daemon=True).start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        app.stop_bot()
+        print("\n已退出。")
