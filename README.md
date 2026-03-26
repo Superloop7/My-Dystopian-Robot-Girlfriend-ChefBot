@@ -23,7 +23,7 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 ### Option 2: 使用UI运行 \ Run with UI
 
 ```bash
-git clone https://github.com/Superloop7/My-Dystopian-Robot-Girlfriend-ChefBot.git
+git clone https://github.com/DrJason33564/My-Dystopian-Robot-Girlfriend-ChefBot.git
 cd My-Dystopian-Robot-Girlfriend-ChefBot
 pip install -r requirements.txt
 python main.py
