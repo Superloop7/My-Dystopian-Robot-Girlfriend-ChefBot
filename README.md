@@ -9,6 +9,7 @@ Auto-chef script for the cooking minigame in *My Dystopian Robot Girlfriend*.
 -  自动识别长条并进行对应操作 \ Auto-detect hold bars and release at the right time
 -  高精确度的模板+颜色识别 \ Template matching + RGB color detection for high accuracy
 -  自适应性的分辨率缩放（本fork修改） \ Adaptive full-resolution scaling based on reference layouts (by DrJason33564)
+-  支持自定义识别阈值 `MATCH_TH` 以调整执行动作时机（本fork修改） \ Support customizing matching threshold `MATCH_TH` to adjust timing of action (by DrJason33564)
 
 ## 快速开始 \ Quick Start
 
